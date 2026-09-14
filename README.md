@@ -1,4 +1,5 @@
 Software Engineering Methods
 Network Engineering Methods
 ![workflow](https://github.com/inkyin-phyu/sem/actions/workflows/main.yml/badge.svg)
-ffffffffffffffffffffff
+# DevOps
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/inkyin-phyu/sem/<action name taken from main.yml>/develop?style=flat-square)
