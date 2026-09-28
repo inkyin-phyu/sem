@@ -1,4 +1,4 @@
-package com.napier.sem;
+ package com.napier.sem;
 
 import java.sql.*;
 
@@ -25,30 +25,95 @@ public class App
             System.exit(-1);
         }
 
-        int retries = 30;
+        int retries = 10;
         for (int i = 0; i < retries; ++i)
         {
             System.out.println("Connecting to database...");
-            try
-            {
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
-                System.out.println("Successfully connected");
-                break;
+            try {
+                // Wait a bit for db to start
+                Thread.sleep(30000);
+                // Connect to database
+                con = DriverManager.getConnection("jdbc:mysql://db:3306/employees?allowPublicKeyRetrieval=true&useSSL=false", "root", "example");                break;
             }
             catch (SQLException sqle)
             {
                 System.out.println("Failed to connect to database attempt " + Integer.toString(i));
                 System.out.println(sqle.getMessage());
-
-                try
-                {
-                    Thread.sleep(3000);
-                }
-                catch (InterruptedException ie)
-                {
-                    System.out.println("Thread interrupted? Should not happen.");
-                }
             }
+            catch (InterruptedException ie)
+            {
+                System.out.println("Thread interrupted? Should not happen.");
+            }
+        }
+    }
+
+    /**
+            * Get employee details from the database by ID.
+        */
+    public Employee getEmployee(int ID)
+    {
+        try
+        {
+            // Create an SQL statement
+            Statement stmt = con.createStatement();
+            // Create string for SQL statement with JOINs for complete details
+            String strSelect =
+                    "SELECT e.emp_no, e.first_name, e.last_name, "
+                            + "t.title, s.salary, d.dept_name, "
+                            + "CONCAT(m.first_name, ' ', m.last_name) AS manager "
+                            + "FROM employees e "
+                            + "JOIN titles t ON e.emp_no = t.emp_no "
+                            + "JOIN salaries s ON e.emp_no = s.emp_no "
+                            + "JOIN dept_emp de ON e.emp_no = de.emp_no "
+                            + "JOIN departments d ON de.dept_no = d.dept_no "
+                            + "LEFT JOIN dept_manager dm ON d.dept_no = dm.dept_no AND dm.to_date = '9999-01-01' "
+                            + "LEFT JOIN employees m ON dm.emp_no = m.emp_no "
+                            + "WHERE e.emp_no = " + ID + " "
+                            + "AND t.to_date = '9999-01-01' "
+                            + "AND s.to_date = '9999-01-01' "
+                            + "AND de.to_date = '9999-01-01'";
+
+            // Execute SQL statement
+            ResultSet rset = stmt.executeQuery(strSelect);
+
+            // Return new employee if valid. Check one is returned
+            if (rset.next())
+            {
+                Employee emp = new Employee();
+                emp.emp_no = rset.getInt("emp_no");
+                emp.first_name = rset.getString("first_name");
+                emp.last_name = rset.getString("last_name");
+                emp.title = rset.getString("title");
+                emp.salary = rset.getInt("salary");
+                emp.dept_name = rset.getString("dept_name");
+                emp.manager = rset.getString("manager");
+                return emp;
+            }
+            else
+                return null;
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            System.out.println("Failed to get employee details");
+            return null;
+        }
+    }
+
+    /**
+            * Display an employee's details.
+        */
+    public void displayEmployee(Employee emp)
+    {
+        if (emp != null)
+        {
+            System.out.println(
+                    emp.emp_no + " "
+                            + emp.first_name + " "
+                            + emp.last_name + "\n"
+                            + emp.title + "\n"
+                            + "Salary:" + emp.salary + "\n"
+                            + "Manager: " + emp.manager + "\n");
         }
     }
 
@@ -78,6 +143,12 @@ public class App
 
         // Connect to database
         a.connect();
+
+        // Get Employee
+        Employee emp = a.getEmployee(255530);
+
+        // Display results
+        a.displayEmployee(emp);
 
         // Disconnect from database
         a.disconnect();
