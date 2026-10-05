@@ -7,30 +7,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
       - name: Set up JDK 26
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: 'temurin'
-
-      - name: Setup network & MongoDB
-        run: |
-          docker network create --driver bridge se-methods
-          docker pull mongo
-          docker run -d --name mongo-dbserver --network se-methods mongo
-          sleep 10
-
       - name: Build with Maven
-        run: mvn package -DskipTests
+        run: mvn package
+      - name: Run docker compose
+        run: docker compose up --abort-on-container-exit
 
-      - name: Build
-        run: docker build -t se_methods .
-
-      - name: Run image
-        run: docker run --network se-methods --name devopscontainer se_methods
-
-      - name: View logs
-        if: always()
-        run: docker logs devopscontainer
